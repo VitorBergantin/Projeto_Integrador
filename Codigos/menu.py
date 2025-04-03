@@ -2,3 +2,4 @@ print("Bem vindo ao sistema de sustentabilidade pessoal \ndesenvolvido pelos alu
 
 print ("Wiliam Walter - RA 2500000")
 print("vitor - RA 25000000")
+print("Verifique se o computador esta ligado")
