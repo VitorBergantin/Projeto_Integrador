@@ -1,6 +1,6 @@
 from mysql.connector import connect, Error
 '''
-BD preparado para a execução
+BD preparado para a execução teste
 deste programa com o comando:
 
 CREATE TABLE IF NOT EXISTS monitoramento (
