@@ -1,6 +1,5 @@
-'''
 from mysql.connector import connect, Error
-
+'''
 BD preparado para a execução
 deste programa com o comando:
 
@@ -17,7 +16,7 @@ CREATE TABLE IF NOT EXISTS monitoramento (
     carro_combustao VARCHAR(1),
     carro_eletrico VARCHAR(1),
     carona_fossil VARCHAR(1))
-
+'''
 def nomes():
     print('+-----------------------------------------------------------------------+')
     print('|                                                                       |')
@@ -257,4 +256,4 @@ while True:
         break
     else:
         print("Opção inválida. Tente novamente.")
-'''
+
