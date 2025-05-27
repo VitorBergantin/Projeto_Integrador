@@ -2,6 +2,13 @@ from mysql.connector import connect, Error
 '''
 BD preparado para a execução
 deste programa com o comando:
+CREATE TABLE sustentabilidade (id INT AUTO_INCREMENT PRIMARY KEY, data TIMESTAMP DEFAULT CURRENT TIMESTAMP, 
+nome VARCHAR (100), 
+agua INT, 
+energia INT, residuos_nao_reciclaveis INT, 
+percentual_reciclado FLOAT, 
+transporte_publico VARCHAR(1), bicicleta VARCHAR(1), caminhada VARCHAR(1), carro_combustao VARCHAR(1), 
+carro_eletrico VARCHAR(1), carona_fossil VARCHAR(1));
 '''
 
 def nomes():
@@ -81,47 +88,7 @@ def avaliar_sustentabilidade(agua, ene_eletrica, residuos_reciclado_total, trans
         avaliacao['transporte'] = 'Moderada Sustentabilidade'
 
     return avaliacao
-'''
-SELECT
-    CASE
-        WHEN agua < 150 THEN 'Alta Sustentabilidade'
-        WHEN agua BETWEEN 150 AND 200 THEN 'Moderada Sustentabilidade'
-        ELSE 'Baixa Sustentabilidade'
-    END AS avaliacao_agua,
 
-    CASE
-        WHEN ene_eletrica < 5 THEN 'Alta Sustentabilidade'
-        WHEN ene_eletrica BETWEEN 5 AND 10 THEN 'Moderada Sustentabilidade'
-        ELSE 'Baixa Sustentabilidade'
-    END AS avaliacao_energia,
-
-    CASE
-        WHEN residuos_reciclado_total > 50 THEN 'Alta Sustentabilidade'
-        WHEN residuos_reciclado_total BETWEEN 20 AND 50 THEN 'Moderada Sustentabilidade'
-        ELSE 'Baixa Sustentabilidade'
-    END AS avaliacao_residuos,
-
-    CASE
-        WHEN 
-            (transporte_publico = 'S' OR transporte_bicicleta = 'S' OR transporte_caminhada = 'S' OR transporte_eletrico = 'S') AND 
-            transporte_combustao = 'N' AND 
-            transporte_carona_fosseis = 'N'
-        THEN 'Alta Sustentabilidade'
-        
-        WHEN 
-            (transporte_combustao = 'S' OR transporte_carona_fosseis = 'S') AND 
-            transporte_publico = 'N' AND 
-            transporte_bicicleta = 'N' AND 
-            transporte_caminhada = 'N' AND 
-            transporte_eletrico = 'N'
-        THEN 'Baixa Sustentabilidade'
-        
-        ELSE 'Moderada Sustentabilidade'
-    END AS avaliacao_transporte
-
-FROM sustentabilidade;
-
-'''
 def input_transporte(msg):
     while True:
         resposta = input(msg).strip().upper()
@@ -158,21 +125,12 @@ def inserir_dado():
         carro_eletrico = input_transporte("5. Carro elétrico: ")
         carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
 
-        transporte = {
-            'publico': transporte_publico,
-            'bicicleta': bicicleta,
-            'caminhada': caminhada,
-            'combustao': carro_combustivel,
-            'eletrico': carro_eletrico,
-            'carona_fosseis': carona_compartilhada_fosseis
-        }
-
         comando= ("Insert into sustentabilidade "+\
             "(nome, agua, energia, residuos_nao_reciclaveis, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil) "
             f"VALUES ('{nome}', {agua}, {ene_eletrica}, {residuos_naoreciclaveis}, {residuos_reciclado_total}, "
             f"'{transporte_publico}', '{bicicleta}', '{caminhada}', '{carro_combustivel}', '{carro_eletrico}', '{carona_compartilhada_fosseis}')")
 
-        conexao=obtem_conexao("localhost","root","27072006Br","piccolo")
+        conexao=obtem_conexao("localhost","root","27072006Br","chacon")
         cursor=conexao.cursor()
         cursor.execute(comando)
         conexao.commit()
@@ -203,15 +161,6 @@ def atualizar_dado():
         carro_combustivel_fosseis = input_transporte("4. Carro a combustão: ")
         carro_eletrico = input_transporte("5. Carro elétrico: ")
         carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
-
-        transporte = {
-            'publico': transporte_publico,
-            'bicicleta': bicicleta,
-            'caminhada': caminhada,
-            'combustao': carro_combustivel_fosseis,
-            'eletrico': carro_eletrico,
-            'carona_fosseis': carona_compartilhada_fosseis
-        }
 
         comando= "UPDATE sustentabilidade"+\
                 "SET = nome, agua,energia,percentual_reciclado,transporte_publico"+\
@@ -274,11 +223,86 @@ def excluir_dado():
         else:
             print("Nome não encontrado. Tente novamente!")
             
+def listagem_dados():
+    comando = """
+        SELECT nome, agua, energia, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao,
+               carro_eletrico, carona_fossil,     
+               CASE
+                   WHEN agua < 150 THEN 'Alta Sustentabilidade'
+                   WHEN agua BETWEEN 150 AND 200 THEN 'Moderada Sustentabilidade'
+                   ELSE 'Baixa Sustentabilidade'
+               END AS avaliacao_agua,
+               CASE
+                   WHEN energia < 5 THEN 'Alta Sustentabilidade'
+                   WHEN energia BETWEEN 5 AND 10 THEN 'Moderada Sustentabilidade'
+                   ELSE 'Baixa Sustentabilidade'
+               END AS avaliacao_energia,
+               CASE
+                   WHEN percentual_reciclado > 50 THEN 'Alta Sustentabilidade'
+                   WHEN percentual_reciclado BETWEEN 20 AND 50 THEN 'Moderada Sustentabilidade'
+                   ELSE 'Baixa Sustentabilidade'
+               END AS avaliacao_residuos,
+               CASE
+                   WHEN 
+                       (transporte_publico = 'S' OR bicicleta = 'S' OR caminhada = 'S' OR carro_eletrico = 'S') AND 
+                       carro_combustao = 'N' AND 
+                       carona_fossil = 'N'
+                   THEN 'Alta Sustentabilidade'
+                   WHEN 
+                       (carro_combustao = 'S' OR carona_fossil = 'S') AND 
+                       transporte_publico = 'N' AND 
+                       bicicleta = 'N' AND 
+                       caminhada = 'N' AND 
+                       carro_eletrico = 'N'
+                   THEN 'Baixa Sustentabilidade'
+                   ELSE 'Moderada Sustentabilidade' 
+               END AS avaliacao_transporte
+        FROM sustentabilidade;
+    """
+
+    conexao = obtem_conexao("localhost", "root", "27072006Br", "chacon")
+    if conexao is None:
+        return []
+    
+    cursor = conexao.cursor()
+    cursor.execute(comando)
+    dados = cursor.fetchall()
+    conexao.close()
+    return dados
+
+
 def listar_dados():
-    print("opção não foi feita")
+    try:
+        linhas = listagem_dados()
+    except Error as e:
+        print("Problema de conexão com o BD!", e)
+        return
+
+    if not linhas:
+        print("Nenhum dado encontrado.")
+        return
+
+    for dados in linhas:
+        print()
+        print("Nome.......................:", dados[0])
+        print('Consumo de água............:', dados[1], 'litros')
+        print('Consumo de energia.........:', dados[2], 'kWh')
+        print('Percentual reciclado.......:', dados[3], '%')
+        print('Transporte público.........:', dados[4])
+        print('Bicicleta..................:', dados[5])
+        print('Caminhada..................:', dados[6])
+        print('Carro a combustão..........:', dados[7])
+        print('Carro elétrico.............:', dados[8])
+        print('Carona (fóssil)............:', dados[9])
+        print()
+        print('Classificação - Água.......:', dados[10])
+        print('Classificação - Energia....:', dados[11])
+        print('Classificação - Resíduos...:', dados[12])
+        print('Classificação - Transporte.:', dados[13])
+        print("-" * 50)
 
 def fechaconexao():
-    conexao=obtem_conexao("ip","nomedobd","senhadobd","chacon")
+    conexao=obtem_conexao("localhost","root","27072006Br","chacon")
     cursor=conexao.cursos()
     cursor.fluxo()
     conexao.close()
