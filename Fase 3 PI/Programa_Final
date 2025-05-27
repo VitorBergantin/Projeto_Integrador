@@ -1,0 +1,311 @@
+from mysql.connector import connect, Error
+'''
+BD preparado para a execução
+deste programa com o comando:
+'''
+
+def nomes():
+    print('+-----------------------------------------------------------------------+')
+    print('|                                                                       |')
+    print('|----------------------PROJETO INTEGRADOR - FASE 3----------------------|')
+    print('|                                                                       |')
+    print('| NOMES:           Lucas Curte Pinto           - 25001822               |') 
+    print('|                  Rafael Almeida Trevissan    - 25002001               |')
+    print('|                  Vinícius Fortes Heinzl      - 25008058               |')
+    print('|                  Vitor Bergantin Ribeiro     - 25006595               |')
+    print('|                  William Walter de Oliveira  - 25005201               |')
+    print('|                                                                       |')
+    print('|-----------------------------------------------------------------------|')
+    print('|                                                                       |')
+    print('+-----------------------------------------------------------------------+')
+
+nomes()
+
+def obtem_conexao(servidor, usuario, senha, bd):
+    if not hasattr(obtem_conexao, 'conexao') or obtem_conexao.conexao is None:
+        try:
+            obtem_conexao.conexao = connect(
+                host=servidor,
+                user=usuario,
+                password=senha,
+                database=bd
+            )
+        except Error as e:
+            print(f"Erro ao conectar ao banco de dados: {e}")
+            obtem_conexao.conexao = None
+    return obtem_conexao.conexao
+
+def contatoCadastrado (nome):
+    comando= f"Select * from sustentabilidade where NOME='{nome}'"
+
+    conexao=obtem_conexao("localhost","root","27072006Br","chacon")
+    cursor=conexao.cursor()
+    cursor.execute(comando)
+
+    linhas=cursor.fetchall()
+    return linhas!=[]  
+                                   
+def avaliar_sustentabilidade(agua, ene_eletrica, residuos_reciclado_total, transporte):
+    avaliacao = {}
+
+    # Água
+    if agua < 150:
+        avaliacao['agua'] = 'Alta Sustentabilidade'
+    elif 150 <= agua <= 200:
+        avaliacao['agua'] = 'Moderada Sustentabilidade'
+    else:
+        avaliacao['agua'] = 'Baixa Sustentabilidade'
+
+    # Energia
+    if ene_eletrica < 5:
+        avaliacao['energia'] = 'Alta Sustentabilidade'
+    elif 5 <= ene_eletrica <= 10:
+        avaliacao['energia'] = 'Moderada Sustentabilidade'
+    else:
+        avaliacao['energia'] = 'Baixa Sustentabilidade'
+
+    # Resíduos recicláveis
+    if residuos_reciclado_total > 50:
+        avaliacao['residuos'] = 'Alta Sustentabilidade'
+    elif 20 <= residuos_reciclado_total <= 50:
+        avaliacao['residuos'] = 'Moderada Sustentabilidade'
+    else:
+        avaliacao['residuos'] = 'Baixa Sustentabilidade'
+
+    # Transporte
+    if (transporte['publico'] == 'S' or transporte['bicicleta'] == 'S' or transporte['caminhada'] == 'S' or transporte['eletrico'] == 'S') and transporte['combustao'] == 'N' and transporte['carona_fosseis'] == 'N':
+        avaliacao['transporte'] = 'Alta Sustentabilidade'
+    elif (transporte['combustao'] == 'S' or transporte['carona_fosseis'] == 'S') and transporte['publico'] == 'N' and transporte['bicicleta'] == 'N' and transporte['caminhada'] == 'N' and transporte['eletrico'] == 'N':
+        avaliacao['transporte'] = 'Baixa Sustentabilidade'
+    else:
+        avaliacao['transporte'] = 'Moderada Sustentabilidade'
+
+    return avaliacao
+'''
+SELECT
+    CASE
+        WHEN agua < 150 THEN 'Alta Sustentabilidade'
+        WHEN agua BETWEEN 150 AND 200 THEN 'Moderada Sustentabilidade'
+        ELSE 'Baixa Sustentabilidade'
+    END AS avaliacao_agua,
+
+    CASE
+        WHEN ene_eletrica < 5 THEN 'Alta Sustentabilidade'
+        WHEN ene_eletrica BETWEEN 5 AND 10 THEN 'Moderada Sustentabilidade'
+        ELSE 'Baixa Sustentabilidade'
+    END AS avaliacao_energia,
+
+    CASE
+        WHEN residuos_reciclado_total > 50 THEN 'Alta Sustentabilidade'
+        WHEN residuos_reciclado_total BETWEEN 20 AND 50 THEN 'Moderada Sustentabilidade'
+        ELSE 'Baixa Sustentabilidade'
+    END AS avaliacao_residuos,
+
+    CASE
+        WHEN 
+            (transporte_publico = 'S' OR transporte_bicicleta = 'S' OR transporte_caminhada = 'S' OR transporte_eletrico = 'S') AND 
+            transporte_combustao = 'N' AND 
+            transporte_carona_fosseis = 'N'
+        THEN 'Alta Sustentabilidade'
+        
+        WHEN 
+            (transporte_combustao = 'S' OR transporte_carona_fosseis = 'S') AND 
+            transporte_publico = 'N' AND 
+            transporte_bicicleta = 'N' AND 
+            transporte_caminhada = 'N' AND 
+            transporte_eletrico = 'N'
+        THEN 'Baixa Sustentabilidade'
+        
+        ELSE 'Moderada Sustentabilidade'
+    END AS avaliacao_transporte
+
+FROM sustentabilidade;
+
+'''
+def input_transporte(msg):
+    while True:
+        resposta = input(msg).strip().upper()
+        if resposta in ['S', 'N']:
+            return resposta
+        else:
+            print("Entrada inválida! Digite apenas 'S' para sim ou 'N' para não.")
+
+
+
+
+def inserir_dado():
+    nome = input("Digite o nome para o registro: ")
+    Jacadastrado = contatoCadastrado(nome)
+    if Jacadastrado:
+        print("Este nome já foi registrado. Use outro ou atualize o existente.")
+        return
+    else:
+
+        try:
+            agua = int(input('Quantos litros de água você consumiu hoje aproximadamente?: '))
+            ene_eletrica = float(input('Quantos kWh de energia elétrica você consumiu hoje?: '))
+            residuos_naoreciclaveis = float(input('Quantos kg de resíduos não recicláveis você gerou hoje?: '))
+            residuos_reciclado_total = int(input('Qual a porcentagem de resíduos reciclados no total (em %)?: '))
+        except ValueError:
+            print('Erro! Os valores devem ser numéricos.')
+            return
+
+        print("Responda com S (sim) ou N (não):")
+        transporte_publico = input_transporte("1. Transporte público: ")
+        bicicleta = input_transporte("2. Bicicleta: ")
+        caminhada = input_transporte("3. Caminhada: ")
+        carro_combustivel = input_transporte("4. Carro a combustão: ")
+        carro_eletrico = input_transporte("5. Carro elétrico: ")
+        carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
+
+        transporte = {
+            'publico': transporte_publico,
+            'bicicleta': bicicleta,
+            'caminhada': caminhada,
+            'combustao': carro_combustivel,
+            'eletrico': carro_eletrico,
+            'carona_fosseis': carona_compartilhada_fosseis
+        }
+
+        comando= ("Insert into sustentabilidade "+\
+            "(nome, agua, energia, residuos_nao_reciclaveis, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil) "
+            f"VALUES ('{nome}', {agua}, {ene_eletrica}, {residuos_naoreciclaveis}, {residuos_reciclado_total}, "
+            f"'{transporte_publico}', '{bicicleta}', '{caminhada}', '{carro_combustivel}', '{carro_eletrico}', '{carona_compartilhada_fosseis}')")
+
+        conexao=obtem_conexao("localhost","root","27072006Br","piccolo")
+        cursor=conexao.cursor()
+        cursor.execute(comando)
+        conexao.commit()
+        print("Registro inserido com sucesso!")
+
+
+def atualizar_dado():
+    nome = input("Digite o nome do registro que deseja atualizar: ")
+
+    try: 
+        Jacadastrado = contatoCadastrado(nome)
+        if not Jacadastrado:
+            print("Nome não encontrado!")
+
+        if Jacadastrado:
+            agua = int(input('Novo consumo de água (litros): '))
+            ene_eletrica = float(input('Novo consumo de energia elétrica (kWh): '))
+            residuos_naoreciclaveis = float(input('Novo peso de resíduos não recicláveis (kg): '))
+            residuos_reciclado_total = int(input('Nova porcentagem de resíduos reciclados (%): '))
+    except ValueError:
+        print('Erro! Os valores devem ser numéricos.')
+
+
+        print("Responda com S (sim) ou N (não):")
+        transporte_publico = input_transporte("1. Transporte público: ")
+        bicicleta = input_transporte("2. Bicicleta: ")
+        caminhada = input_transporte("3. Caminhada: ")
+        carro_combustivel_fosseis = input_transporte("4. Carro a combustão: ")
+        carro_eletrico = input_transporte("5. Carro elétrico: ")
+        carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
+
+        transporte = {
+            'publico': transporte_publico,
+            'bicicleta': bicicleta,
+            'caminhada': caminhada,
+            'combustao': carro_combustivel_fosseis,
+            'eletrico': carro_eletrico,
+            'carona_fosseis': carona_compartilhada_fosseis
+        }
+
+        comando= "UPDATE sustentabilidade"+\
+                "SET = nome, agua,energia,percentual_reciclado,transporte_publico"+\
+                "bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil)"+\
+                "SET = "+\
+                f"('{nome}','{agua}',{ene_eletrica},{residuos_reciclado_total},'{transporte_publico}'), '{bicicleta}', '{caminhada}', '{carro_combustivel_fosseis}', '{carro_eletrico}', '{carona_compartilhada_fosseis}'"
+
+        conexao=obtem_conexao("localhost","root","27072006Br","chacon")
+        cursor=conexao.cursor()
+        cursor.execute(comando)
+        conexao.commit()
+        print("Registro atualizado com sucesso!")
+
+
+def excluir_dado():
+    while True:
+        nome = input("Digite o nome de um contato que deseja excluir: ")
+        if contatoCadastrado(nome):
+            try:
+                comando = f"""
+                SELECT agua, energia, percentual_reciclado, 
+                       transporte_publico, bicicleta, caminhada, carro_combustao, 
+                       carro_eletrico, carona_fossil 
+                FROM sustentabilidade 
+                WHERE nome = '{nome}'
+                """
+                conexao = obtem_conexao("localhost", "root", "27072006Br", "chacon")
+                cursor = conexao.cursor()
+                cursor.execute(comando)
+                dados = cursor.fetchone()
+
+                if dados:
+                    print()
+                    print('Consumo de água............:', dados[0], 'litros')
+                    print('Consumo de energia.........:', dados[1], 'kWh')
+                    print('Percentual reciclado.......:', dados[2], '%')
+                    print('Transporte público.........:', dados[3])
+                    print('Bicicleta..................:', dados[4])
+                    print('Caminhada..................:', dados[5])
+                    print('Carro a combustão..........:', dados[6])
+                    print('Carro elétrico.............:', dados[7])
+                    print('Carona (fóssil)............:', dados[8])
+
+                    confirmacao = input(f"\nDeseja realmente excluir o contato '{nome}'? (s/n): ")
+                    if confirmacao.lower() == 's':
+                        comando_deletar = f"DELETE FROM sustentabilidade WHERE nome = '{nome}'"
+                        cursor.execute(comando_deletar)
+                        conexao.commit()
+                        print(f"\nContato '{nome}' excluído com sucesso!")
+                    else:
+                        print('\nExclusão cancelada.')
+                else:
+                    print("\nRegistro não encontrado.")
+
+                break
+
+            except Error as e:
+                print("Problema de conexão com o BD!", e)
+                break
+        else:
+            print("Nome não encontrado. Tente novamente!")
+            
+def listar_dados():
+    print("opção não foi feita")
+
+def fechaconexao():
+    conexao=obtem_conexao("ip","nomedobd","senhadobd","chacon")
+    cursor=conexao.cursos()
+    cursor.fluxo()
+    conexao.close()
+# Menu principal
+while True:
+    print("\n" + "-" * 50)
+    print("♻️         --- PROJETO INTEGRADOR FASE 3 ---     ♻️-")
+    print("-" * 50)
+    print("*  1. Inserir novo registro                         ")
+    print("*  2. Atualizar registro existente                  ")
+    print("*  3. Excluir registro                              ")
+    print("*  4. Listar/classificar todos os registros         ")
+    print("*  5. Sair                                          ")
+    print("-" * 50)
+    opcao = input("-  Escolha uma opção (1-5): ")
+    print("-" * 50)
+
+    if opcao == '1':
+        inserir_dado()
+    elif opcao == '2':
+        atualizar_dado()
+    elif opcao == '3':
+        excluir_dado()
+    elif opcao == '4':
+        listar_dados()
+    elif opcao == '5':
+        print("Programa encerrado!")
+        break
+    else:
+        print("Opção inválida. Tente novamente.")
