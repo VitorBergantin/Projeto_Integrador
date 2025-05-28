@@ -42,6 +42,19 @@ def obtem_conexao(servidor, usuario, senha, bd):
             obtem_conexao.conexao = None
     return obtem_conexao.conexao
 
+def opcaoEscolhida(menu):
+    print()
+    opcoesValidas = []
+    for i, item in enumerate(menu, start=1):
+        print(f"{i}) {item}")
+        opcoesValidas.append(str(i))
+
+    while True:
+        escolha = input("Escolha uma opção: ")
+        if escolha in opcoesValidas:
+            return int(escolha)
+        print("Opção inválida. Tente novamente.")
+
 def contatoCadastrado (nome):
     comando= f"Select * from sustentabilidade where NOME='{nome}'"
 
@@ -51,43 +64,6 @@ def contatoCadastrado (nome):
 
     linhas=cursor.fetchall()
     return linhas!=[]  
-                                   
-def avaliar_sustentabilidade(agua, ene_eletrica, residuos_reciclado_total, transporte):
-    avaliacao = {}
-
-    # Água
-    if agua < 150:
-        avaliacao['agua'] = 'Alta Sustentabilidade'
-    elif 150 <= agua <= 200:
-        avaliacao['agua'] = 'Moderada Sustentabilidade'
-    else:
-        avaliacao['agua'] = 'Baixa Sustentabilidade'
-
-    # Energia
-    if ene_eletrica < 5:
-        avaliacao['energia'] = 'Alta Sustentabilidade'
-    elif 5 <= ene_eletrica <= 10:
-        avaliacao['energia'] = 'Moderada Sustentabilidade'
-    else:
-        avaliacao['energia'] = 'Baixa Sustentabilidade'
-
-    # Resíduos recicláveis
-    if residuos_reciclado_total > 50:
-        avaliacao['residuos'] = 'Alta Sustentabilidade'
-    elif 20 <= residuos_reciclado_total <= 50:
-        avaliacao['residuos'] = 'Moderada Sustentabilidade'
-    else:
-        avaliacao['residuos'] = 'Baixa Sustentabilidade'
-
-    # Transporte
-    if (transporte['publico'] == 'S' or transporte['bicicleta'] == 'S' or transporte['caminhada'] == 'S' or transporte['eletrico'] == 'S') and transporte['combustao'] == 'N' and transporte['carona_fosseis'] == 'N':
-        avaliacao['transporte'] = 'Alta Sustentabilidade'
-    elif (transporte['combustao'] == 'S' or transporte['carona_fosseis'] == 'S') and transporte['publico'] == 'N' and transporte['bicicleta'] == 'N' and transporte['caminhada'] == 'N' and transporte['eletrico'] == 'N':
-        avaliacao['transporte'] = 'Baixa Sustentabilidade'
-    else:
-        avaliacao['transporte'] = 'Moderada Sustentabilidade'
-
-    return avaliacao
 
 def input_transporte(msg):
     while True:
@@ -107,12 +83,11 @@ def inserir_dado():
         print("Este nome já foi registrado. Use outro ou atualize o existente.")
         return
     else:
-
         try:
             agua = int(input('Quantos litros de água você consumiu hoje aproximadamente?: '))
-            ene_eletrica = float(input('Quantos kWh de energia elétrica você consumiu hoje?: '))
-            residuos_naoreciclaveis = float(input('Quantos kg de resíduos não recicláveis você gerou hoje?: '))
-            residuos_reciclado_total = int(input('Qual a porcentagem de resíduos reciclados no total (em %)?: '))
+            energia = float(input('Quantos kWh de energia elétrica você consumiu hoje?: '))
+            residuos_nao_reciclaveis = float(input('Quantos kg de resíduos não recicláveis você gerou hoje?: '))
+            percentual_reciclado = int(input('Qual a porcentagem de resíduos reciclados no total (em %)?: '))
         except ValueError:
             print('Erro! Os valores devem ser numéricos.')
             return
@@ -121,14 +96,14 @@ def inserir_dado():
         transporte_publico = input_transporte("1. Transporte público: ")
         bicicleta = input_transporte("2. Bicicleta: ")
         caminhada = input_transporte("3. Caminhada: ")
-        carro_combustivel = input_transporte("4. Carro a combustão: ")
+        carro_combustao = input_transporte("4. Carro a combustão: ")
         carro_eletrico = input_transporte("5. Carro elétrico: ")
-        carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
+        carona_fossil = input_transporte("6. Carona (fóssil): ")
 
-        comando= ("Insert into sustentabilidade "+\
-            "(nome, agua, energia, residuos_nao_reciclaveis, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil) "
-            f"VALUES ('{nome}', {agua}, {ene_eletrica}, {residuos_naoreciclaveis}, {residuos_reciclado_total}, "
-            f"'{transporte_publico}', '{bicicleta}', '{caminhada}', '{carro_combustivel}', '{carro_eletrico}', '{carona_compartilhada_fosseis}')")
+        comando= f"""INSERT INTO sustentabilidade
+            (nome, agua, energia, residuos_nao_reciclaveis, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil)
+            VALUES ('{nome}', {agua}, {energia}, {residuos_nao_reciclaveis}, {percentual_reciclado},
+            '{transporte_publico}', '{bicicleta}', '{caminhada}', '{carro_combustao}', '{carro_eletrico}', '{carona_fossil}')"""
 
         conexao=obtem_conexao("localhost","root","27072006Br","chacon")
         cursor=conexao.cursor()
@@ -145,34 +120,84 @@ def atualizar_dado():
         if not Jacadastrado:
             print("Nome não encontrado!")
 
-        if Jacadastrado:
-            agua = int(input('Novo consumo de água (litros): '))
-            ene_eletrica = float(input('Novo consumo de energia elétrica (kWh): '))
-            residuos_naoreciclaveis = float(input('Novo peso de resíduos não recicláveis (kg): '))
-            residuos_reciclado_total = int(input('Nova porcentagem de resíduos reciclados (%): '))
+        else:
+            MenuAtualização = ['Atualizar Nome','Atualizar Água', 'Atualizar Energia','Atualizar Manipulação Lixo','Atualizar Transportes','Finalizar Atualizações']
+
+            while True:
+                conexao = obtem_conexao("localhost","root","27072006Br","chacon")
+                cursor = conexao.cursor()
+                comando = f"""
+                    SELECT nome, agua, energia, percentual_reciclado, 
+                        transporte_publico, bicicleta, caminhada, carro_combustao, 
+                        carro_eletrico, carona_fossil 
+                    FROM sustentabilidade 
+                    WHERE nome = '{nome}'
+                    """
+                conexao = obtem_conexao("localhost", "root", "27072006Br", "chacon")
+                cursor = conexao.cursor()
+                cursor.execute(comando)
+                dados = cursor.fetchone()
+
+                if dados:
+                        print()
+                        print('Nome.......................:', dados[0])
+                        print('Consumo de água............:', dados[1], 'litros')
+                        print('Consumo de energia.........:', dados[2], 'kWh')
+                        print('Percentual reciclado.......:', dados[3], '%')
+                        print('Transporte público.........:', dados[4])
+                        print('Bicicleta..................:', dados[5])
+                        print('Caminhada..................:', dados[6])
+                        print('Carro a combustão..........:', dados[7])
+                        print('Carro elétrico.............:', dados[8])
+                        print('Carona (fóssil)............:', dados[9])
+
+                opcao = int(opcaoEscolhida(MenuAtualização))
+                print()
+                if opcao == 1:
+                    nome2 = input("Digite o novo nome deste cadastro: ")
+                    comando = f"UPDATE sustentabilidade SET nome = '{nome2}' WHERE nome = '{nome}'"
+
+                elif opcao == 2:
+                    agua = int(input("Consumo de água hoje em Litros: "))
+                    comando = f"UPDATE sustentabilidade SET agua = {agua} WHERE nome = '{nome}'"
+            
+                elif opcao == 3:
+                    energia = int(input("Consumo de energia hoje em kWh: "))
+                    comando = f"UPDATE sustentabilidade SET energia = {energia} WHERE nome = '{nome}'"
+
+                elif opcao == 4:
+                    residuos_nao_reciclaveis = int(input("Quantidade totla de lixo produzido: "))
+                    percentual_reciclado = float(input("Percentual de lixo Reciclado: "))
+                    comando = f"UPDATE sustentabilidade SET residuos_nao_reciclaveis = {residuos_nao_reciclaveis}, percentual_reciclado = {percentual_reciclado} WHERE nome = '{nome}'"
+
+                elif opcao == 5:
+                    print("Responda com S (sim) ou N (não):")
+                    transporte_publico = input_transporte("1. Transporte público: ")
+                    bicicleta = input_transporte("2. Bicicleta: ")
+                    caminhada = input_transporte("3. Caminhada: ")
+                    carro_combustao = input_transporte("4. Carro a combustão: ")
+                    carro_eletrico = input_transporte("5. Carro elétrico: ")
+                    carona_fossil = input_transporte("6. Carona (fóssil): ")
+                    comando= f"""UPDATE sustentabilidade
+                SET transporte_publico = '{transporte_publico}', bicicleta = '{bicicleta}', caminhada = '{caminhada}', carro_combustao = '{carro_combustao}',
+                carro_eletrico = '{carro_eletrico}', carona_fossil = '{carona_fossil}' WHERE nome = '{nome}'"""
+                
+                elif opcao == 6:
+                    print("Atualizações Encerradas")
+                    break
+                else:
+                    print("Opção inválida")
+                    continue
+                try:
+                    cursor.execute(comando)
+                    conexao.commit()
+                    print("Registro atualizado com sucesso!")
+
+                except Error as e:
+                    print("Erro ao atualizar o contato", e)
+
     except ValueError:
         print('Erro! Os valores devem ser numéricos.')
-
-
-        print("Responda com S (sim) ou N (não):")
-        transporte_publico = input_transporte("1. Transporte público: ")
-        bicicleta = input_transporte("2. Bicicleta: ")
-        caminhada = input_transporte("3. Caminhada: ")
-        carro_combustivel_fosseis = input_transporte("4. Carro a combustão: ")
-        carro_eletrico = input_transporte("5. Carro elétrico: ")
-        carona_compartilhada_fosseis = input_transporte("6. Carona (fóssil): ")
-
-        comando= "UPDATE sustentabilidade"+\
-                "SET = nome, agua,energia,percentual_reciclado,transporte_publico"+\
-                "bicicleta, caminhada, carro_combustao, carro_eletrico, carona_fossil)"+\
-                "SET = "+\
-                f"('{nome}','{agua}',{ene_eletrica},{residuos_reciclado_total},'{transporte_publico}'), '{bicicleta}', '{caminhada}', '{carro_combustivel_fosseis}', '{carro_eletrico}', '{carona_compartilhada_fosseis}'"
-
-        conexao=obtem_conexao("localhost","root","27072006Br","chacon")
-        cursor=conexao.cursor()
-        cursor.execute(comando)
-        conexao.commit()
-        print("Registro atualizado com sucesso!")
 
 
 def excluir_dado():
