@@ -74,8 +74,6 @@ def input_transporte(msg):
             print("Entrada inválida! Digite apenas 'S' para sim ou 'N' para não.")
 
 
-
-
 def inserir_dado():
     nome = input("Digite o nome para o registro: ")
     Jacadastrado = contatoCadastrado(nome)
@@ -127,7 +125,7 @@ def atualizar_dado():
                 conexao = obtem_conexao("localhost","root","27072006Br","chacon")
                 cursor = conexao.cursor()
                 comando = f"""
-                    SELECT nome, agua, energia, percentual_reciclado, 
+                    SELECT DATE_FORMAT(datas, '%d/%m/%y'), nome, agua, energia, percentual_reciclado, 
                         transporte_publico, bicicleta, caminhada, carro_combustao, 
                         carro_eletrico, carona_fossil 
                     FROM sustentabilidade 
@@ -140,16 +138,17 @@ def atualizar_dado():
 
                 if dados:
                         print()
-                        print('Nome.......................:', dados[0])
-                        print('Consumo de água............:', dados[1], 'litros')
-                        print('Consumo de energia.........:', dados[2], 'kWh')
-                        print('Percentual reciclado.......:', dados[3], '%')
-                        print('Transporte público.........:', dados[4])
-                        print('Bicicleta..................:', dados[5])
-                        print('Caminhada..................:', dados[6])
-                        print('Carro a combustão..........:', dados[7])
-                        print('Carro elétrico.............:', dados[8])
-                        print('Carona (fóssil)............:', dados[9])
+                        print('Data......................:', dados[0])
+                        print('Nome......................:', dados[1])
+                        print('Consumo de água...........:', dados[2], 'litros')
+                        print('Consumo de energia........:', dados[3], 'kWh')
+                        print('Percentual reciclado......:', dados[4], '%')
+                        print('Transporte público........:', dados[5])
+                        print('Bicicleta.................:', dados[6])
+                        print('Caminhada.................:', dados[7])
+                        print('Carro a combustão.........:', dados[8])
+                        print('Carro elétrico............:', dados[9])
+                        print('Carona (fóssil)...........:', dados[10])
 
                 opcao = int(opcaoEscolhida(MenuAtualização))
                 print()
@@ -206,7 +205,7 @@ def excluir_dado():
         if contatoCadastrado(nome):
             try:
                 comando = f"""
-                SELECT agua, energia, percentual_reciclado, 
+                SELECT DATE_FORMAT(datas, '%d/%m/%y'), nome, agua, energia, percentual_reciclado, 
                        transporte_publico, bicicleta, caminhada, carro_combustao, 
                        carro_eletrico, carona_fossil 
                 FROM sustentabilidade 
@@ -219,15 +218,17 @@ def excluir_dado():
 
                 if dados:
                     print()
-                    print('Consumo de água............:', dados[0], 'litros')
-                    print('Consumo de energia.........:', dados[1], 'kWh')
-                    print('Percentual reciclado.......:', dados[2], '%')
-                    print('Transporte público.........:', dados[3])
-                    print('Bicicleta..................:', dados[4])
-                    print('Caminhada..................:', dados[5])
-                    print('Carro a combustão..........:', dados[6])
-                    print('Carro elétrico.............:', dados[7])
-                    print('Carona (fóssil)............:', dados[8])
+                    print('Data......................:', dados[0])
+                    print('Nome......................:', dados[1])
+                    print('Consumo de água...........:', dados[2], 'litros')
+                    print('Consumo de energia........:', dados[3], 'kWh')
+                    print('Percentual reciclado......:', dados[4], '%')
+                    print('Transporte público........:', dados[5])
+                    print('Bicicleta.................:', dados[6])
+                    print('Caminhada.................:', dados[7])
+                    print('Carro a combustão.........:', dados[8])
+                    print('Carro elétrico............:', dados[9])
+                    print('Carona (fóssil)...........:', dados[10])
 
                     confirmacao = input(f"\nDeseja realmente excluir o contato '{nome}'? (s/n): ")
                     if confirmacao.lower() == 's':
@@ -247,10 +248,78 @@ def excluir_dado():
                 break
         else:
             print("Nome não encontrado. Tente novamente!")
-            
+
+def procurar_registro():
+    nome = input("Digite o nome do registro que deseja procurar: ")
+
+    JaCadastrado = contatoCadastrado(nome)
+    if JaCadastrado:
+            try:
+                comando = f"""
+            SELECT DATE_FORMAT(datas, '%d/%m/%y'), nome, agua, energia, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao,
+                carro_eletrico, carona_fossil,     
+                CASE
+                    WHEN agua < 150 THEN 'Alta Sustentabilidade'
+                    WHEN agua BETWEEN 150 AND 200 THEN 'Moderada Sustentabilidade'
+                    ELSE 'Baixa Sustentabilidade'
+                END AS avaliacao_agua,
+                CASE
+                    WHEN energia < 5 THEN 'Alta Sustentabilidade'
+                    WHEN energia BETWEEN 5 AND 10 THEN 'Moderada Sustentabilidade'
+                    ELSE 'Baixa Sustentabilidade'
+                END AS avaliacao_energia,
+                CASE
+                    WHEN percentual_reciclado > 50 THEN 'Alta Sustentabilidade'
+                    WHEN percentual_reciclado BETWEEN 20 AND 50 THEN 'Moderada Sustentabilidade'
+                    ELSE 'Baixa Sustentabilidade'
+                END AS avaliacao_residuos,
+                CASE
+                    WHEN 
+                        (transporte_publico = 'S' OR bicicleta = 'S' OR caminhada = 'S' OR carro_eletrico = 'S') AND 
+                        carro_combustao = 'N' AND 
+                        carona_fossil = 'N'
+                    THEN 'Alta Sustentabilidade'
+                    WHEN 
+                        (carro_combustao = 'S' OR carona_fossil = 'S') AND 
+                        transporte_publico = 'N' AND 
+                        bicicleta = 'N' AND 
+                        caminhada = 'N' AND 
+                        carro_eletrico = 'N'
+                    THEN 'Baixa Sustentabilidade'
+                    ELSE 'Moderada Sustentabilidade' 
+                END AS avaliacao_transporte
+            FROM sustentabilidade WHERE nome = '{nome}';
+        """
+            except Error as e:
+                print("Erro:",e)
+    conexao = obtem_conexao("localhost", "root", "27072006Br", "chacon")
+    cursor = conexao.cursor()
+    cursor.execute(comando)
+    dados = cursor.fetchone()
+
+    if dados:
+            print()
+            print('Data......................:', dados[0])
+            print('Nome......................:', dados[1])
+            print('Consumo de água...........:', dados[2], 'litros')
+            print('Consumo de energia........:', dados[3], 'kWh')
+            print('Percentual reciclado......:', dados[4], '%')
+            print('Transporte público........:', dados[5])
+            print('Bicicleta.................:', dados[6])
+            print('Caminhada.................:', dados[7])
+            print('Carro a combustão.........:', dados[8])
+            print('Carro elétrico............:', dados[9])
+            print('Carona (fóssil)...........:', dados[10])
+            print()
+            print('Classificação - Água......:', dados[11])
+            print('Classificação - Energia...:', dados[12])
+            print('Classificação - Resíduos..:', dados[13])
+            print('Classificação - Transporte:', dados[14])
+                    
+                
 def listagem_dados():
     comando = """
-        SELECT nome, agua, energia, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao,
+        SELECT DATE_FORMAT(datas, '%d/%m/%y'), nome, agua, energia, percentual_reciclado, transporte_publico, bicicleta, caminhada, carro_combustao,
                carro_eletrico, carona_fossil,     
                CASE
                    WHEN agua < 150 THEN 'Alta Sustentabilidade'
@@ -309,26 +378,41 @@ def listar_dados():
 
     for dados in linhas:
         print()
-        print("Nome.......................:", dados[0])
-        print('Consumo de água............:', dados[1], 'litros')
-        print('Consumo de energia.........:', dados[2], 'kWh')
-        print('Percentual reciclado.......:', dados[3], '%')
-        print('Transporte público.........:', dados[4])
-        print('Bicicleta..................:', dados[5])
-        print('Caminhada..................:', dados[6])
-        print('Carro a combustão..........:', dados[7])
-        print('Carro elétrico.............:', dados[8])
-        print('Carona (fóssil)............:', dados[9])
+        print('Data......................:', dados[0])
+        print('Nome......................:', dados[1])
+        print('Consumo de água...........:', dados[2], 'litros')
+        print('Consumo de energia........:', dados[3], 'kWh')
+        print('Percentual reciclado......:', dados[4], '%')
+        print('Transporte público........:', dados[5])
+        print('Bicicleta.................:', dados[6])
+        print('Caminhada.................:', dados[7])
+        print('Carro a combustão.........:', dados[8])
+        print('Carro elétrico............:', dados[9])
+        print('Carona (fóssil)...........:', dados[10])
         print()
-        print('Classificação - Água.......:', dados[10])
-        print('Classificação - Energia....:', dados[11])
-        print('Classificação - Resíduos...:', dados[12])
-        print('Classificação - Transporte.:', dados[13])
+        print('Classificação - Água......:', dados[11])
+        print('Classificação - Energia...:', dados[12])
+        print('Classificação - Resíduos..:', dados[13])
+        print('Classificação - Transporte:', dados[14])
         print("-" * 50)
+
+def tirar_medias():
+    comando = "SELECT AVG(agua), AVG(energia), AVG(percentual_reciclado) FROM sustentabilidade;"
+
+    conexao=obtem_conexao("localhost","root","27072006Br","chacon")
+    cursor = conexao.cursor()
+    cursor.execute(comando)
+    dados = cursor.fetchone()
+
+    if dados:
+        print()
+        print("Média Consumo de água.........:", dados[0])
+        print("Média Consumo de energia......:", dados[1])
+        print("Média Percentual de Reciclagem:", dados[2])
 
 def fechaconexao():
     conexao=obtem_conexao("localhost","root","27072006Br","chacon")
-    cursor=conexao.cursos()
+    cursor=conexao.cursor()
     cursor.fluxo()
     conexao.close()
 # Menu principal
@@ -339,10 +423,12 @@ while True:
     print("*  1. Inserir novo registro                         ")
     print("*  2. Atualizar registro existente                  ")
     print("*  3. Excluir registro                              ")
-    print("*  4. Listar/classificar todos os registros         ")
-    print("*  5. Sair                                          ")
+    print("*  4. Procurar registro específico                  ")
+    print("*  5. Listar/classificar todos os registros         ")
+    print("*  6. Tirar médias de consumo dos registros         ")
+    print("*  7. Sair                                          ")
     print("-" * 50)
-    opcao = input("-  Escolha uma opção (1-5): ")
+    opcao = input("-  Escolha uma opção (1-7): ")
     print("-" * 50)
 
     if opcao == '1':
@@ -352,8 +438,12 @@ while True:
     elif opcao == '3':
         excluir_dado()
     elif opcao == '4':
-        listar_dados()
+        procurar_registro()
     elif opcao == '5':
+        listar_dados()
+    elif opcao == '6':
+        tirar_medias()
+    elif opcao == '7':
         print("Programa encerrado!")
         break
     else:
